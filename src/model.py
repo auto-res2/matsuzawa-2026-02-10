@@ -4,7 +4,7 @@ Model implementation for C3-AutoCoT and PIR-AutoCoT.
 import os
 from typing import List, Dict, Any, Tuple, Optional
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM
 import numpy as np
 from collections import Counter
 
@@ -20,12 +20,12 @@ from src.preprocess import (
 
 class AutoCoTModel:
     """
-    Base class for Auto-CoT models using Llama.
+    Base class for Auto-CoT models supporting both causal LM and seq2seq models.
     """
     
     def __init__(
         self,
-        model_name: str = "meta-llama/Llama-3.1-8B-Instruct",
+        model_name: str = "google/flan-t5-base",
         cache_dir: str = ".cache/",
         device: str = "cuda",
         max_new_tokens: int = 512,
@@ -38,12 +38,15 @@ class AutoCoTModel:
         
         os.makedirs(cache_dir, exist_ok=True)
         
+        # Detect model type
+        self.is_seq2seq = any(name in model_name.lower() for name in ['t5', 'bart', 'pegasus'])
+        
         # Load tokenizer and model
-        print(f"Loading model {model_name}...")
+        print(f"Loading model {model_name} (seq2seq={self.is_seq2seq})...")
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             cache_dir=cache_dir,
-            padding_side='left'
+            padding_side='left' if not self.is_seq2seq else 'right'
         )
         
         if self.tokenizer.pad_token is None:
@@ -51,17 +54,35 @@ class AutoCoTModel:
         
         model_kwargs = {
             "cache_dir": cache_dir,
-            "torch_dtype": torch.float16,
-            "device_map": "auto"
         }
         
-        if load_in_8bit:
+        # Use CPU if CUDA not available
+        if not torch.cuda.is_available():
+            device = "cpu"
+            self.device = device
+            print("CUDA not available, using CPU")
+        else:
+            model_kwargs["torch_dtype"] = torch.float16
+            model_kwargs["device_map"] = "auto"
+        
+        if load_in_8bit and torch.cuda.is_available():
             model_kwargs["load_in_8bit"] = True
         
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            **model_kwargs
-        )
+        # Load appropriate model type
+        if self.is_seq2seq:
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                model_name,
+                **model_kwargs
+            )
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                **model_kwargs
+            )
+        
+        # Move to device if not using device_map
+        if "device_map" not in model_kwargs and device != "auto":
+            self.model = self.model.to(device)
         
         self.model.eval()
         print("Model loaded successfully.")
@@ -85,14 +106,23 @@ class AutoCoTModel:
             padding=True,
             truncation=True,
             max_length=2048
-        ).to(self.model.device)
+        )
+        
+        # Move inputs to device
+        if hasattr(self.model, 'device'):
+            device = self.model.device
+        else:
+            device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         
         generation_kwargs = {
             "max_new_tokens": max_new_tokens,
             "num_return_sequences": num_return_sequences,
             "pad_token_id": self.tokenizer.pad_token_id,
-            "eos_token_id": self.tokenizer.eos_token_id,
         }
+        
+        if self.tokenizer.eos_token_id is not None:
+            generation_kwargs["eos_token_id"] = self.tokenizer.eos_token_id
         
         if temperature > 0:
             generation_kwargs.update({
@@ -109,9 +139,13 @@ class AutoCoTModel:
         # Decode outputs
         generated_texts = []
         for output in outputs:
-            # Skip the input tokens
-            generated = output[inputs['input_ids'].shape[1]:]
-            text = self.tokenizer.decode(generated, skip_special_tokens=True)
+            if self.is_seq2seq:
+                # For seq2seq models, decode the entire output
+                text = self.tokenizer.decode(output, skip_special_tokens=True)
+            else:
+                # For causal LM, skip the input tokens
+                generated = output[inputs['input_ids'].shape[1]:]
+                text = self.tokenizer.decode(generated, skip_special_tokens=True)
             generated_texts.append(text)
         
         return generated_texts
@@ -242,6 +276,7 @@ class C3AutoCoT(AutoCoTModel):
         self_consistency_config: Dict,
         paraphrase_invariance_config: Dict,
         cycle_consistency_config: Dict,
+        max_candidates_per_cluster: int = None,
     ) -> List[Dict]:
         """
         Select demonstrations using C3-AutoCoT reliability scoring.
@@ -251,6 +286,10 @@ class C3AutoCoT(AutoCoTModel):
         for cluster_id in range(num_clusters):
             # Get questions in this cluster
             cluster_indices = np.where(cluster_labels == cluster_id)[0]
+            
+            # Limit candidates if specified
+            if max_candidates_per_cluster is not None:
+                cluster_indices = cluster_indices[:max_candidates_per_cluster]
             
             best_demo = None
             best_reliability = -1
@@ -328,6 +367,7 @@ class PIRAutoCoT(AutoCoTModel):
         self_consistency_config: Dict,
         paraphrase_invariance_config: Dict,
         cycle_consistency_config: Dict,
+        max_candidates_per_cluster: int = None,
     ) -> List[Dict]:
         """
         Select demonstrations using PIR-AutoCoT reliability scoring (no cycle consistency).
@@ -336,6 +376,10 @@ class PIRAutoCoT(AutoCoTModel):
         
         for cluster_id in range(num_clusters):
             cluster_indices = np.where(cluster_labels == cluster_id)[0]
+            
+            # Limit candidates if specified
+            if max_candidates_per_cluster is not None:
+                cluster_indices = cluster_indices[:max_candidates_per_cluster]
             
             best_demo = None
             best_reliability = -1

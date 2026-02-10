@@ -162,15 +162,21 @@ def train_single_run(cfg: DictConfig) -> Dict[str, Any]:
     
     # Select demonstrations
     print("\nSelecting demonstrations...")
-    selected_demos = model.select_demonstrations(
-        demo_pool=demo_pool,
-        cluster_labels=cluster_labels,
-        num_clusters=cfg.run.method.num_clusters,
-        reliability_threshold=cfg.run.method.reliability_threshold,
-        self_consistency_config=OmegaConf.to_container(cfg.run.method.self_consistency),
-        paraphrase_invariance_config=OmegaConf.to_container(cfg.run.method.paraphrase_invariance),
-        cycle_consistency_config=OmegaConf.to_container(cfg.run.method.cycle_consistency)
-    )
+    select_demos_kwargs = {
+        'demo_pool': demo_pool,
+        'cluster_labels': cluster_labels,
+        'num_clusters': cfg.run.method.num_clusters,
+        'reliability_threshold': cfg.run.method.reliability_threshold,
+        'self_consistency_config': OmegaConf.to_container(cfg.run.method.self_consistency),
+        'paraphrase_invariance_config': OmegaConf.to_container(cfg.run.method.paraphrase_invariance),
+        'cycle_consistency_config': OmegaConf.to_container(cfg.run.method.cycle_consistency)
+    }
+    
+    # Add max_candidates_per_cluster if it exists in config
+    if 'max_candidates_per_cluster' in cfg.run.method:
+        select_demos_kwargs['max_candidates_per_cluster'] = cfg.run.method.max_candidates_per_cluster
+    
+    selected_demos = model.select_demonstrations(**select_demos_kwargs)
     
     print(f"\nSelected {len(selected_demos)} demonstrations")
     

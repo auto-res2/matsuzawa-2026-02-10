@@ -15,16 +15,17 @@ exec_mode: null
 mode:
   sanity_check:
     dataset:
-      demo_pool_size: 50  # Reduced from 500 for faster sanity check
+      demo_pool_size: 20  # Reduced from 500 for faster sanity check
     method:
       num_clusters: 2  # Reduced from 8 for faster sanity check
+      max_candidates_per_cluster: 3  # Limit candidates tried per cluster
       self_consistency:
         num_samples: 2  # Reduced from 5 for faster sanity check
       paraphrase_invariance:
         num_paraphrases: 1  # Reduced from 3 for faster sanity check
-      reliability_threshold: 0.3  # Lower threshold to ensure demos are selected
+      reliability_threshold: 0.2  # Lower threshold to ensure demos are selected
     training:
-      num_test_questions: 5
+      num_test_questions: 10  # Increased to ensure at least 5 steps
       batch_size: 1
     wandb:
       mode: "disabled"

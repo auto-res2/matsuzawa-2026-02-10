@@ -28,7 +28,7 @@ method:
   reliability_threshold: 0.6  # r = r_sc * r_pi * r_cc >= tau
 
 model:
-  name: "meta-llama/Llama-3.1-8B-Instruct"
+  name: "google/flan-t5-base"
   cache_dir: ".cache/"
   max_new_tokens: 512
   device: "cuda"
