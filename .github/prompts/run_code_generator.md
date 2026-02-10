@@ -6,7 +6,7 @@ Task:
 
 Constraints:
 - Do not run git commands (no commit, push, pull, or checkout).
-- Prefer editing existing files, but you may create new files in the allowed locations below.
+- Prefer editing existing files; create new files only within Allowed Files. Do not create or modify files outside Allowed Files (for example: package.json, package-lock.json, tests/).
 - Ensure all changes run on a Linux runner.
 
 Tool Use:
