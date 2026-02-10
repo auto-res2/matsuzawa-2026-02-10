@@ -1,12 +1,13 @@
 name: "Run Sanity Check"
+run-name: "Run Sanity Check (run_id: ${{ inputs.run_id }})"
 
 on:
   workflow_dispatch:
     inputs:
       branch_name:
         description: 'Branch name (e.g., main)'
-      run_ids:
-        description: 'A JSON array of run_ids to process'
+      run_id:
+        description: 'A single run_id to process'
         required: true
       runner_label:
         description: 'Runner label (e.g., ["ubuntu-latest"], ["self-hosted", "A100"])'
@@ -26,38 +27,8 @@ env:
   RESULTS_DIR: ".research/results"
 
 jobs:
-  setup:
-    name: Setup for Sequential Run
-    runs-on: ubuntu-latest
-    outputs:
-      current_run_id: ${{ steps.parse.outputs.current_run_id }}
-      remaining_run_ids: ${{ steps.parse.outputs.remaining_run_ids }}
-      is_empty: ${{ steps.parse.outputs.is_empty }}
-
-    steps:
-      - name: Parse run_ids list
-        id: parse
-        run: |
-          RUN_IDS='${{ github.event.inputs.run_ids }}'
-
-          if [[ $(echo "$RUN_IDS" | jq 'length') -eq 0 ]]; then
-            echo "All run_ids have been processed."
-            echo "is_empty=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_empty=false" >> "$GITHUB_OUTPUT"
-            CURRENT_ID=$(echo "$RUN_IDS" | jq -r '.[0]')
-            REMAINING_IDS=$(echo "$RUN_IDS" | jq -c '.[1:]')
-            echo "current_run_id=$CURRENT_ID" >> "$GITHUB_OUTPUT"
-            echo "remaining_run_ids=$REMAINING_IDS" >> "$GITHUB_OUTPUT"
-
-            echo "Processing run_id: $CURRENT_ID"
-            echo "Remaining run_ids: $REMAINING_IDS"
-          fi
-
   run-sanity-check:
-    name: Run Sanity Check for ${{ needs.setup.outputs.current_run_id }}
-    needs: setup
-    if: needs.setup.outputs.is_empty == 'false'
+    name: Run Sanity Check for ${{ github.event.inputs.run_id }}
     runs-on: ${{ fromJSON(github.event.inputs.runner_label) }}
     timeout-minutes: 120
 
@@ -65,7 +36,7 @@ jobs:
       sanity_passed: ${{ steps.check-result.outputs.passed }}
 
     env:
-      RUN_ID: ${{ needs.setup.outputs.current_run_id }}
+      RUN_ID: ${{ github.event.inputs.run_id }}
 
     steps:
       - name: Checkout repository
@@ -120,29 +91,3 @@ jobs:
           name: sanity-${{ github.run.id }}-${{ env.RUN_ID }}
           path: ${{ env.RESULTS_DIR }}
 
-      - name: Print artifact name
-        if: always()
-        run: |
-          echo "Sanity artifact name: sanity-${{ github.run.id }}-${{ env.RUN_ID }}"
-
-  trigger-next-run:
-    name: Trigger Next Run in Sequence
-    needs: [setup, run-sanity-check]
-    if: needs.setup.outputs.is_empty == 'false' && needs.run-sanity-check.outputs.sanity_passed == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Trigger workflow with remaining list
-        run: |
-          REMAINING_IDS='${{ needs.setup.outputs.remaining_run_ids }}'
-          if [[ $(echo "$REMAINING_IDS" | jq 'length') -eq 0 ]]; then
-            echo "Successfully completed all run_ids."
-          else
-            echo "Triggering next run with remaining run_ids: $REMAINING_IDS"
-            gh workflow run "run_sanity_check.yml" --ref ${{ github.ref }} \
-              -f branch_name='${{ github.event.inputs.branch_name }}' \
-              -f run_ids="$REMAINING_IDS" \
-              -f runner_label='${{ github.event.inputs.runner_label }}'
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

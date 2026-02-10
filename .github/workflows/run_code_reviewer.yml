@@ -1,4 +1,5 @@
 name: "Run Code Reviewer"
+run-name: "Run Code Reviewer (phase: ${{ inputs.source_phase }}, run_id: ${{ inputs.run_id }})"
 
 on:
   workflow_dispatch:
