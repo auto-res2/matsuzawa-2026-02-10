@@ -122,7 +122,8 @@ jobs:
 
       - name: Print artifact name
         if: always()
-        run: echo "Sanity artifact name: sanity-${{ github.run.id }}-${{ env.RUN_ID }}"
+        run: |
+          echo "Sanity artifact name: sanity-${{ github.run.id }}-${{ env.RUN_ID }}"
 
   trigger-next-run:
     name: Trigger Next Run in Sequence
