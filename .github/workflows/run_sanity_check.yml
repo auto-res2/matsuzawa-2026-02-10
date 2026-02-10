@@ -88,6 +88,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sanity-${{ github.run.id }}-${{ env.RUN_ID }}
+          name: sanity-${{ github.run_id }}-${{ env.RUN_ID }}
           path: ${{ env.RESULTS_DIR }}
 
