@@ -58,7 +58,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch_name }}
 
-      - name: Build codegen prompt
+      - name: Build code generation prompt
         id: build-prompt
         env:
           PROMPT_PATH: ${{ github.event.inputs.prompt_path }}
@@ -84,10 +84,11 @@ jobs:
             printf "%s\n" "$WANDB_CONFIG"
           } > /tmp/codegen_prompt.txt
 
+          DELIM="EOF_$(date +%s%N)"
           {
-            echo "prompt<<'EOF'"
+            echo "prompt<<$DELIM"
             cat /tmp/codegen_prompt.txt
-            echo "EOF"
+            echo "$DELIM"
           } >> "$GITHUB_OUTPUT"
 
       - name: Run Claude Code for code generation
