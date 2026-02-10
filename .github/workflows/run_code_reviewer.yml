@@ -171,7 +171,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git add -A .
+          git add config/ src/ pyproject.toml
 
           if ! git diff --staged --quiet; then
             git commit -m "[CI] Code fix for run_id=${{ github.event.inputs.run_id }} using ${{ github.event.inputs.github_actions_agent }}"
