@@ -105,7 +105,7 @@ jobs:
         run: |
           if [[ "${{ steps.run-exp.outcome }}" == "success" ]] \
             && grep -q "\[SANITY RUN\] PASSED" "$RESULTS_DIR/stdout.txt" \
-            && grep -q "TRIAL_VALIDATION: PASS" "$RESULTS_DIR/stdout.txt"; then
+            && grep -q "SANITY_VALIDATION: PASS" "$RESULTS_DIR/stdout.txt"; then
             echo "Sanity check passed for $RUN_ID"
             echo "passed=true" >> "$GITHUB_OUTPUT"
           else

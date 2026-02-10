@@ -73,7 +73,7 @@ jobs:
 
           if [ -f "$RESULTS_DIR/stdout.txt" ]; then
             echo -e "\n=== RELEVANT STDOUT (Error/Exception/Validation lines) ===" >> "$RESULTS_DIR/error_summary.txt"
-            grep -i -E "(error|exception|traceback|failed|fatal|trial_validation)" "$RESULTS_DIR/stdout.txt" | tail -n 80 >> "$RESULTS_DIR/error_summary.txt" || echo "No error patterns found in stdout" >> "$RESULTS_DIR/error_summary.txt"
+            grep -i -E "(error|exception|traceback|failed|fatal|sanity_validation)" "$RESULTS_DIR/stdout.txt" | tail -n 80 >> "$RESULTS_DIR/error_summary.txt" || echo "No error patterns found in stdout" >> "$RESULTS_DIR/error_summary.txt"
           fi
 
           cat "$RESULTS_DIR/error_summary.txt"
