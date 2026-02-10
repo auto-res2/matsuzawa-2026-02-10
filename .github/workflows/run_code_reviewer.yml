@@ -141,10 +141,11 @@ jobs:
             cat "$ERROR_SUMMARY_PATH"
           } > /tmp/code_fix_prompt.txt
 
+          DELIM="PROMPT_EOF_$(date +%s%N)"
           {
-            echo "prompt<<'EOF'"
+            printf 'prompt<<%s\n' "$DELIM"
             cat /tmp/code_fix_prompt.txt
-            echo "EOF"
+            printf '\n%s\n' "$DELIM"
           } >> "$GITHUB_OUTPUT"
 
       - name: Run Claude Code to fix errors
