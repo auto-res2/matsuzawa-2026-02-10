@@ -179,6 +179,30 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
+      - name: Determine review action
+        id: review-action
+        env:
+          RUN_ID: ${{ github.event.inputs.run_id }}
+          RUN_STAGE: ${{ github.event.inputs.run_stage }}
+          WORKFLOW_RUN_ID: ${{ github.event.inputs.workflow_run_id }}
+        run: |
+          ACTION="proceed"
+          if ! git diff --quiet; then
+            ACTION="retry"
+          fi
+
+          printf '{\n  "code_review_action": "%s",\n  "run_id": "%s",\n  "run_stage": "%s",\n  "workflow_run_id": "%s"\n}\n' \
+            "$ACTION" "$RUN_ID" "$RUN_STAGE" "$WORKFLOW_RUN_ID" > "$RESULTS_DIR/code_review_result.json"
+
+          echo "code_review_action=$ACTION" >> "$GITHUB_OUTPUT"
+
+      - name: Upload review result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reviewer-${{ github.run_id }}-${{ github.event.inputs.run_id }}
+          path: ${{ env.RESULTS_DIR }}/code_review_result.json
+
       - name: Commit and push fix
         run: |
           git config --local user.name "github-actions[bot]"
