@@ -25,9 +25,10 @@ Sanity Check Expectations:
 - Metrics are finite (no NaN/inf).
 - If loss is logged, the final loss is <= 0.99 * initial loss.
 - If accuracy is logged, it is not always 0 across steps.
-- Trial mode prints:
-  - TRIAL_VALIDATION: PASS
-  - TRIAL_VALIDATION_SUMMARY: {...}
+- If multiple runs are executed in one process, fail when all runs report identical metric values.
+- Sanity mode prints:
+  - SANITY_VALIDATION: PASS
+  - SANITY_VALIDATION_SUMMARY: {...}
 
 Output:
 - Make code changes directly in the workspace.

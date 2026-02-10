@@ -57,18 +57,20 @@ Mode Behavior:
 - sanity_check: epochs=1, batches=1-2, wandb.mode=disabled, optuna.n_trials=0
 - main: wandb.mode=online, full epochs, full optuna trials
 
-Trial Validation (required):
+Sanity Validation (required):
 - In sanity_check mode, perform a lightweight sanity check to ensure the experiment is meaningful.
 - Conditions:
-	- At least 2 training steps are executed (prefer 2 batches).
+	- At least 5 training steps are executed (prefer 5 batches).
 	- All logged metrics are finite (no NaN/inf).
-	- If loss is logged, the final loss is <= 0.99 * initial loss.
+	- If loss is logged, the final loss is <= initial loss.
 	- If accuracy is logged, it is not always 0 across steps.
+	- If multiple runs are executed in one process, fail when all runs report identical metric values.
+- If metrics are missing, emit a FAIL with reason=missing_metrics.
 - Emit a single-line verdict to stdout:
-	- TRIAL_VALIDATION: PASS
-	- TRIAL_VALIDATION: FAIL reason=<short_reason>
+	- SANITY_VALIDATION: PASS
+	- SANITY_VALIDATION: FAIL reason=<short_reason>
 - Always print a compact JSON summary line for debugging:
-	- TRIAL_VALIDATION_SUMMARY: {"steps":..., "loss_start":..., "loss_end":..., "accuracy_min":..., "accuracy_max":...}
+	- SANITY_VALIDATION_SUMMARY: {"steps":..., "loss_start":..., "loss_end":..., "accuracy_min":..., "accuracy_max":...}
 
 Required Outputs:
 - at least one config/runs/*.yaml
@@ -110,7 +112,7 @@ pyproject.toml:
 Basic Validation:
 - Ensure the following is runnable in sanity_check mode (syntax-level):
 	- uv run python -u -m src.main run={run_id} results_dir={path} --sanity_check
-- Ensure sanity_check mode prints TRIAL_VALIDATION and TRIAL_VALIDATION_SUMMARY lines.
+- Ensure sanity_check mode prints SANITY_VALIDATION and SANITY_VALIDATION_SUMMARY lines.
 
 Output:
 - Make code changes directly in the workspace.
