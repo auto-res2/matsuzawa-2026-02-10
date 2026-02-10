@@ -1,0 +1,56 @@
+# C3-AutoCoT: Cycle-Consistent & Paraphrase-Invariant Reliability Auto-CoT
+run_id: proposed
+
+method:
+  type: c3_autocot
+  name: "C3-AutoCoT"
+  description: "Cycle-consistent & paraphrase-invariant reliability Auto-CoT with question reconstruction"
+  
+  # Demo pool and clustering
+  demo_pool_size: 500  # First 500 SVAMP training questions
+  num_clusters: 8
+  demos_per_cluster: 1
+  
+  # Reliability thresholds
+  self_consistency:
+    num_samples: 5
+    temperature: 0.7
+  
+  paraphrase_invariance:
+    num_paraphrases: 3
+    temperature: 0.5
+  
+  cycle_consistency:
+    enabled: true
+    temperature: 0.5
+  
+  # Combined reliability threshold
+  reliability_threshold: 0.6  # r = r_sc * r_pi * r_cc >= tau
+
+model:
+  name: "meta-llama/Llama-3.1-8B-Instruct"
+  cache_dir: ".cache/"
+  max_new_tokens: 512
+  device: "cuda"
+  load_in_8bit: false
+
+dataset:
+  name: "svamp"
+  cache_dir: ".cache/"
+  demo_pool_size: 500
+  test_size: 200
+  seed: 42
+
+training:
+  mode: "demo_selection"
+  num_test_questions: 200
+  num_demos: 8
+  greedy_decoding: true
+  batch_size: 4
+  
+wandb:
+  entity: "airas"
+  project: "2026-02-10-test"
+  mode: "online"
+
+optuna: null

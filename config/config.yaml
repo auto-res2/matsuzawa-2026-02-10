@@ -1,0 +1,26 @@
+# Base Hydra configuration
+defaults:
+  - _self_
+
+# Run configuration will be loaded from runs/*.yaml
+run: ???
+
+# Results directory
+results_dir: "results"
+
+# Mode overrides
+mode:
+  sanity_check:
+    training:
+      num_test_questions: 5
+      batch_size: 1
+    wandb:
+      mode: "disabled"
+  pilot:
+    training:
+      num_test_questions: 20
+    wandb:
+      mode: "disabled"
+  main:
+    wandb:
+      mode: "online"
