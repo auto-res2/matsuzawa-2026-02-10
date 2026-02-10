@@ -13,6 +13,15 @@ on:
       sanity_workflow_run_id:
         description: 'Workflow run ID of the sanity check'
         required: true
+      research_hypothesis:
+        description: 'Research hypothesis (JSON/YAML text)'
+        required: true
+      experimental_design:
+        description: 'Experimental design (JSON/YAML text)'
+        required: true
+      wandb_config:
+        description: 'WandB config (JSON/YAML text: entity/project)'
+        required: true
       github_actions_agent:
         description: 'AI agent tool to use (claude_code or open_code)'
         required: true
@@ -83,6 +92,9 @@ jobs:
         env:
           PROMPT_PATH: ${{ github.event.inputs.prompt_path }}
           RUN_ID: ${{ github.event.inputs.run_id }}
+          RESEARCH_HYPOTHESIS: ${{ github.event.inputs.research_hypothesis }}
+          EXPERIMENTAL_DESIGN: ${{ github.event.inputs.experimental_design }}
+          WANDB_CONFIG: ${{ github.event.inputs.wandb_config }}
           ERROR_SUMMARY_PATH: ${{ env.RESULTS_DIR }}/error_summary.txt
         run: |
           set -e
@@ -99,6 +111,12 @@ jobs:
             cat "$PROMPT_PATH"
             echo ""
             echo "RUN_ID: $RUN_ID"
+            echo "research_hypothesis:"
+            printf "%s\n" "$RESEARCH_HYPOTHESIS"
+            echo "experimental_design:"
+            printf "%s\n" "$EXPERIMENTAL_DESIGN"
+            echo "wandb_config:"
+            printf "%s\n" "$WANDB_CONFIG"
             echo "ERROR_SUMMARY:"
             cat "$ERROR_SUMMARY_PATH"
           } > /tmp/code_fix_prompt.txt
