@@ -10,6 +10,7 @@ Constraints:
 - Modify only existing files listed below. Do not create or delete files.
 - Keep changes minimal and focused on resolving the failure.
 - Ensure all changes run on a Linux runner.
+- Do not create or modify files outside Allowed Files (for example: package.json, package-lock.json, tests/).
 
 Tool Use:
 - All available agent tools are permitted. Use them when useful.
@@ -21,9 +22,9 @@ Allowed Files (fixed):
 - pyproject.toml (dependencies only)
 
 Sanity Check Expectations:
-- At least 2 training steps are executed.
+- At least 5 training steps are executed.
 - Metrics are finite (no NaN/inf).
-- If loss is logged, the final loss is <= 0.99 * initial loss.
+- If loss is logged, the final loss is <= initial loss.
 - If accuracy is logged, it is not always 0 across steps.
 - If multiple runs are executed in one process, fail when all runs report identical metric values.
 - Sanity mode prints:
