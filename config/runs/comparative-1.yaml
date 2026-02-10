@@ -10,6 +10,7 @@ method:
   demo_pool_size: 500
   num_clusters: 8
   demos_per_cluster: 1
+  max_candidates_per_cluster: 10  # Max candidates to try per cluster before giving up
   
   # Reliability thresholds (no cycle consistency)
   self_consistency:
