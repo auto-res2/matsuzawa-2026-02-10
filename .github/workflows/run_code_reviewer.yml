@@ -10,14 +10,9 @@ on:
       run_id:
         description: 'Run ID to fix'
         required: true
-      sanity_workflow_run_id:
-        description: 'Workflow run ID (legacy for sanity_check)'
-        required: false
-        default: ''
       source_workflow_run_id:
         description: 'Workflow run ID for the source results'
-        required: false
-        default: ''
+        required: true
       source_phase:
         description: 'Which phase produced the artifact (sanity, pilot, main)'
         required: true
@@ -84,17 +79,9 @@ jobs:
       - name: Resolve artifact name
         id: resolve-artifact
         run: |
-          SOURCE_RUN_ID="${{ github.event.inputs.source_workflow_run_id }}"
-          if [ -z "$SOURCE_RUN_ID" ]; then
-            SOURCE_RUN_ID="${{ github.event.inputs.sanity_workflow_run_id }}"
-          fi
-          if [ -z "$SOURCE_RUN_ID" ]; then
-            echo "::error::source_workflow_run_id is required for phase '${{ github.event.inputs.source_phase }}'"
-            exit 1
-          fi
-          echo "name=${{ github.event.inputs.source_phase }}-${SOURCE_RUN_ID}-${{ github.event.inputs.run_id }}" >> "$GITHUB_OUTPUT"
+          echo "name=${{ github.event.inputs.source_phase }}-${{ github.event.inputs.source_workflow_run_id }}-${{ github.event.inputs.run_id }}" >> "$GITHUB_OUTPUT"
 
-      - name: Download sanity results
+      - name: Download phase results
         uses: actions/download-artifact@v4
         with:
           name: ${{ steps.resolve-artifact.outputs.name }}
