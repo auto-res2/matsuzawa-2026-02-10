@@ -13,6 +13,10 @@ on:
       sanity_workflow_run_id:
         description: 'Workflow run ID of the sanity check'
         required: true
+      artifact_name:
+        description: 'Override sanity artifact name (optional)'
+        required: false
+        default: ''
       research_hypothesis:
         description: 'Research hypothesis (JSON/YAML text)'
         required: true
@@ -70,7 +74,7 @@ jobs:
       - name: Download sanity results
         uses: actions/download-artifact@v4
         with:
-          name: sanity-results-${{ github.event.inputs.sanity_workflow_run_id }}-${{ github.event.inputs.run_id }}
+          name: ${{ github.event.inputs.artifact_name || format('sanity-results-{0}-{1}', github.event.inputs.sanity_workflow_run_id, github.event.inputs.run_id) }}
           path: ${{ env.RESULTS_DIR }}
 
       - name: Extract error summary
