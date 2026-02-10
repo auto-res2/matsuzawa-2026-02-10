@@ -1,0 +1,51 @@
+# @package _global_
+
+# C3-AutoCoT (proposed method)
+# Model: LLaMA-3-8B
+# Dataset: SVAMP
+
+run:
+  run_id: proposed-llama3-svamp
+
+method:
+  name: c3-autocot
+  type: proposed
+  # C3 reliability: r = r_sc * r_pi * r_cc
+  self_consistency_samples: 5
+  paraphrase_count: 3
+  cycle_consistency_enabled: true
+  reliability_threshold: 0.6
+
+model:
+  name: meta-llama/Meta-Llama-3-8B-Instruct
+  max_new_tokens: 256
+  temperature: 0.0
+  device: cuda
+  load_in_8bit: false
+
+dataset:
+  name: svamp
+  demo_pool_size: 500
+  test_size: 200
+  
+training:
+  num_clusters: 8
+  demos_per_cluster: 1
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  random_seed: 42
+  
+optuna:
+  enabled: true
+  n_trials: 20
+  study_name: c3-autocot-llama3-svamp
+  sampler: TPESampler
+  pruner: MedianPruner
+  parameters:
+    reliability_threshold:
+      type: float
+      low: 0.4
+      high: 0.8
+    self_consistency_samples:
+      type: int
+      low: 3
+      high: 7
