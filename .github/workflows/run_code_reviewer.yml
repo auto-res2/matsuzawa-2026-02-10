@@ -85,6 +85,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ steps.resolve-artifact.outputs.name }}
+          run-id: ${{ github.event.inputs.source_workflow_run_id }}
+          repository: ${{ github.repository }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ${{ env.RESULTS_DIR }}
 
       - name: Extract error summary
