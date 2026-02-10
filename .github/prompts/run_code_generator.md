@@ -15,6 +15,7 @@ Tool Use:
 
 Allowed Files (fixed):
 - config/runs/*.yaml (new or updated run configs)
+- config/config.yaml
 - src/train.py, src/evaluate.py, src/preprocess.py, src/model.py, src/main.py
 - pyproject.toml (dependencies only)
 
@@ -102,6 +103,12 @@ src/main.py:
 - Orchestrates a single run_id.
 - Uses @hydra.main(config_path="../config") since execution is from repo root.
 - Applies mode overrides before invoking train.py.
+
+config/config.yaml:
+- Provide shared defaults and wandb settings.
+- Include:
+	- wandb.entity and wandb.project from input
+	- wandb.mode default as online (overridden by sanity_check)
 
 src/preprocess.py and src/model.py:
 - Provide full implementations for datasets and models in experimental_design.
