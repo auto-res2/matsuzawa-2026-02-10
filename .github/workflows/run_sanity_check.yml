@@ -117,8 +117,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sanity-results-${{ github.run.id }}-${{ env.RUN_ID }}
+          name: sanity-${{ github.run.id }}-${{ env.RUN_ID }}
           path: ${{ env.RESULTS_DIR }}
+
+      - name: Print artifact name
+        if: always()
+        run: echo "Sanity artifact name: sanity-${{ github.run.id }}-${{ env.RUN_ID }}"
 
   trigger-next-run:
     name: Trigger Next Run in Sequence

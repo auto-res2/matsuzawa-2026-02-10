@@ -11,12 +11,22 @@ on:
         description: 'Run ID to fix'
         required: true
       sanity_workflow_run_id:
-        description: 'Workflow run ID of the sanity check'
-        required: true
-      artifact_name:
-        description: 'Override sanity artifact name (optional)'
+        description: 'Workflow run ID (legacy for sanity_check)'
         required: false
         default: ''
+      source_workflow_run_id:
+        description: 'Workflow run ID for the source results'
+        required: false
+        default: ''
+      source_phase:
+        description: 'Which phase produced the artifact (sanity, pilot, main)'
+        required: true
+        type: choice
+        options:
+          - sanity
+          - pilot
+          - main
+        default: 'sanity'
       research_hypothesis:
         description: 'Research hypothesis (JSON/YAML text)'
         required: true
@@ -71,10 +81,23 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch_name }}
 
+      - name: Resolve artifact name
+        id: resolve-artifact
+        run: |
+          SOURCE_RUN_ID="${{ github.event.inputs.source_workflow_run_id }}"
+          if [ -z "$SOURCE_RUN_ID" ]; then
+            SOURCE_RUN_ID="${{ github.event.inputs.sanity_workflow_run_id }}"
+          fi
+          if [ -z "$SOURCE_RUN_ID" ]; then
+            echo "::error::source_workflow_run_id is required for phase '${{ github.event.inputs.source_phase }}'"
+            exit 1
+          fi
+          echo "name=${{ github.event.inputs.source_phase }}-${SOURCE_RUN_ID}-${{ github.event.inputs.run_id }}" >> "$GITHUB_OUTPUT"
+
       - name: Download sanity results
         uses: actions/download-artifact@v4
         with:
-          name: ${{ github.event.inputs.artifact_name || format('sanity-results-{0}-{1}', github.event.inputs.sanity_workflow_run_id, github.event.inputs.run_id) }}
+          name: ${{ steps.resolve-artifact.outputs.name }}
           path: ${{ env.RESULTS_DIR }}
 
       - name: Extract error summary
@@ -96,6 +119,7 @@ jobs:
         env:
           PROMPT_PATH: ${{ github.event.inputs.prompt_path }}
           RUN_ID: ${{ github.event.inputs.run_id }}
+          PHASE: ${{ github.event.inputs.source_phase }}
           RESEARCH_HYPOTHESIS: ${{ github.event.inputs.research_hypothesis }}
           EXPERIMENTAL_DESIGN: ${{ github.event.inputs.experimental_design }}
           WANDB_CONFIG: ${{ github.event.inputs.wandb_config }}
@@ -114,6 +138,7 @@ jobs:
           {
             cat "$PROMPT_PATH"
             echo ""
+            echo "PHASE: $PHASE"
             echo "RUN_ID: $RUN_ID"
             echo "research_hypothesis:"
             printf "%s\n" "$RESEARCH_HYPOTHESIS"
